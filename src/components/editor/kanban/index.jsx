@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Settings } from "lucide-react"
 import { KanbanBoard } from './kanban-board'
 
-// Mock initial data
+// Mock initial data with new fields
 const initialColumns = [
   {
     id: 'todo',
@@ -13,9 +13,36 @@ const initialColumns = [
     color: '#10b981',
     collapsed: false,
     cards: [
-      { id: '1', content: 'Дизайн главной страницы', priority: 'high' },
-      { id: '2', content: 'Прототип мобильной версии', priority: 'medium' },
-      { id: '3', content: 'Создать логотип', priority: 'low' },
+      {
+        id: '1',
+        content: 'Дизайн главной страницы',
+        priority: 'high',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
+      {
+        id: '2',
+        content: 'Прототип мобильной версии',
+        priority: 'medium',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
+      {
+        id: '3',
+        content: 'Создать логотип',
+        priority: 'low',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
     ]
   },
   {
@@ -24,8 +51,26 @@ const initialColumns = [
     color: '#f59e0b',
     collapsed: false,
     cards: [
-      { id: '4', content: 'Разработка API endpoints', priority: 'high' },
-      { id: '5', content: 'Настройка базы данных', priority: 'medium' },
+      {
+        id: '4',
+        content: 'Разработка API endpoints',
+        priority: 'high',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
+      {
+        id: '5',
+        content: 'Настройка базы данных',
+        priority: 'medium',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
     ]
   },
   {
@@ -34,7 +79,16 @@ const initialColumns = [
     color: '#8b5cf6',
     collapsed: false,
     cards: [
-      { id: '6', content: 'Тестирование пользовательского потока', priority: 'high' },
+      {
+        id: '6',
+        content: 'Тестирование пользовательского потока',
+        priority: 'high',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
     ]
   },
   {
@@ -43,8 +97,26 @@ const initialColumns = [
     color: '#0ea5e9',
     collapsed: false,
     cards: [
-      { id: '7', content: 'Создание технического задания', priority: 'medium' },
-      { id: '8', content: 'Подготовка среды разработки', priority: 'low' },
+      {
+        id: '7',
+        content: 'Создание технического задания',
+        priority: 'medium',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
+      {
+        id: '8',
+        content: 'Подготовка среды разработки',
+        priority: 'low',
+        description: '',
+        dueDate: null,
+        labels: [],
+        assignee: '',
+        checklist: []
+      },
     ]
   }
 ]
@@ -66,7 +138,7 @@ export function ProjectKanban({ projectId }) {
     '#6366f1', // indigo
   ]
 
-  // Add new column
+  // --- Column operations ---
   const handleAddColumn = () => {
     const newColumn = {
       id: `col-${Date.now()}`,
@@ -78,67 +150,206 @@ export function ProjectKanban({ projectId }) {
     setColumns([newColumn, ...columns])
   }
 
-  // Remove column
   const handleRemoveColumn = (columnId) => {
     setColumns(columns.filter(col => col.id !== columnId))
   }
 
-  // Toggle column collapse
   const toggleColumnCollapse = (columnId) => {
-    setColumns(columns.map(col => 
+    setColumns(columns.map(col =>
       col.id === columnId ? { ...col, collapsed: !col.collapsed } : col
     ))
   }
 
-  // Update column title
   const updateColumnTitle = (columnId, newTitle) => {
     if (!newTitle.trim()) return
-    setColumns(columns.map(col => 
+    setColumns(columns.map(col =>
       col.id === columnId ? { ...col, title: newTitle } : col
     ))
   }
 
-  // Update column color
   const updateColumnColor = (columnId, newColor) => {
-    setColumns(columns.map(col => 
+    setColumns(columns.map(col =>
       col.id === columnId ? { ...col, color: newColor } : col
     ))
   }
 
-  // Add card to column
+  // --- Card operations ---
   const handleAddCard = (columnId) => {
     const newCard = {
       id: `card-${Date.now()}`,
       content: 'Новая задача',
-      priority: 'medium'
+      priority: 'none',
+      description: '',
+      dueDate: null,
+      labels: [],
+      assignee: '',
+      checklist: []
     }
-    setColumns(columns.map(col => 
-      col.id === columnId 
-        ? { ...col, cards: [...col.cards, newCard] } 
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? { ...col, cards: [...col.cards, newCard] }
         : col
     ))
+    // Automatically open the card for editing
+    setEditingCardId(newCard.id)
   }
 
-  // Remove card from column
   const handleRemoveCard = (columnId, cardId) => {
-    setColumns(columns.map(col => 
-      col.id === columnId 
-        ? { ...col, cards: col.cards.filter(card => card.id !== cardId) } 
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? { ...col, cards: col.cards.filter(card => card.id !== cardId) }
         : col
     ))
   }
 
-  // Update card content
   const updateCardContent = (columnId, cardId, newContent) => {
     if (!newContent.trim()) return
-    setColumns(columns.map(col => 
-      col.id === columnId 
-        ? { 
-            ...col, 
-            cards: col.cards.map(card => 
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
               card.id === cardId ? { ...card, content: newContent } : card
             )
-          } 
+          }
+        : col
+    ))
+  }
+
+  // New card detail operations
+  const updateCardPriority = (columnId, cardId, priority) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId ? { ...card, priority } : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const updateCardDueDate = (columnId, cardId, dueDate) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId ? { ...card, dueDate } : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const updateCardDescription = (columnId, cardId, description) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId ? { ...card, description } : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const addCardLabel = (columnId, cardId, label) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? { ...card, labels: [...card.labels, label] }
+                : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const removeCardLabel = (columnId, cardId, labelId) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? { ...card, labels: card.labels.filter(l => l.id !== labelId) }
+                : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const updateCardAssignee = (columnId, cardId, assignee) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId ? { ...card, assignee } : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const addCardChecklistItem = (columnId, cardId, item) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? { ...card, checklist: [...card.checklist, item] }
+                : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const toggleChecklistItem = (columnId, cardId, itemId) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? {
+                    ...card,
+                    checklist: card.checklist.map(item =>
+                      item.id === itemId
+                        ? { ...item, checked: !item.checked }
+                        : item
+                    )
+                  }
+                : card
+            )
+          }
+        : col
+    ))
+  }
+
+  const removeChecklistItem = (columnId, cardId, itemId) => {
+    setColumns(columns.map(col =>
+      col.id === columnId
+        ? {
+            ...col,
+            cards: col.cards.map(card =>
+              card.id === cardId
+                ? {
+                    ...card,
+                    checklist: card.checklist.filter(item => item.id !== itemId)
+                  }
+                : card
+            )
+          }
         : col
     ))
   }
@@ -164,7 +375,7 @@ export function ProjectKanban({ projectId }) {
       {/* Kanban Board */}
       <KanbanBoard
         columns={columns}
-        setColumns={setColumns}              // ✅ New – board updates state directly
+        setColumns={setColumns}
         onAddColumn={handleAddColumn}
         onRemoveColumn={handleRemoveColumn}
         onToggleCollapse={toggleColumnCollapse}
@@ -173,6 +384,17 @@ export function ProjectKanban({ projectId }) {
         onAddCard={handleAddCard}
         onRemoveCard={handleRemoveCard}
         onUpdateCardContent={updateCardContent}
+        // New card detail callbacks
+        onUpdateCardPriority={updateCardPriority}
+        onUpdateCardDueDate={updateCardDueDate}
+        onUpdateCardDescription={updateCardDescription}
+        onAddCardLabel={addCardLabel}
+        onRemoveCardLabel={removeCardLabel}
+        onUpdateCardAssignee={updateCardAssignee}
+        onAddCardChecklistItem={addCardChecklistItem}
+        onToggleChecklistItem={toggleChecklistItem}
+        onRemoveChecklistItem={removeChecklistItem}
+        // Editing state
         editingColumnId={editingColumnId}
         setEditingColumnId={setEditingColumnId}
         editingCardId={editingCardId}

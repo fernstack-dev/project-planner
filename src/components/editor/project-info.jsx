@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Tag } from "lucide-react"
 
-// Mock categories for suggestions
 const mockCategories = [
   'Веб-разработка',
   'Мобильная разработка',
@@ -32,12 +31,10 @@ export function ProjectInfo({ project, onUpdate }) {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const categoryInputRef = useRef(null)
   const suggestionsRef = useRef(null)
-  
-  // Debounce timer refs
+
   const saveTimeoutRef = useRef({})
   const pendingUpdatesRef = useRef({})
 
-  // Update form when project changes externally (e.g., after save)
   useEffect(() => {
     setFormData({
       name: project.name || '',
@@ -46,7 +43,6 @@ export function ProjectInfo({ project, onUpdate }) {
     })
   }, [project])
 
-  // Find category suggestions
   const updateSuggestions = (input) => {
     if (input.trim()) {
       const searchTerm = input.toLowerCase()
@@ -65,7 +61,6 @@ export function ProjectInfo({ project, onUpdate }) {
     updateSuggestions(formData.category)
   }, [formData.category])
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -82,37 +77,28 @@ export function ProjectInfo({ project, onUpdate }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Debounced save function
   const debouncedSave = useCallback((field, value) => {
-    // Clear any existing timeout for this field
     if (saveTimeoutRef.current[field]) {
       clearTimeout(saveTimeoutRef.current[field])
     }
-
-    // Store the pending update
     pendingUpdatesRef.current[field] = value
 
-    // Set new timeout
     saveTimeoutRef.current[field] = setTimeout(() => {
-      // Send the latest value
       const currentValue = pendingUpdatesRef.current[field]
       if (currentValue !== undefined) {
         onUpdate({ [field]: currentValue })
         delete pendingUpdatesRef.current[field]
       }
-    }, 500) // 500ms debounce
+    }, 500)
   }, [onUpdate])
 
   const handleChange = (field, value) => {
     const newData = { ...formData, [field]: value }
     setFormData(newData)
-    
-    // Use debounced save
     debouncedSave(field, value)
   }
 
   const handleCategorySelect = (category) => {
-    // Direct save for category selection (no debounce needed)
     setFormData(prev => ({ ...prev, category }))
     onUpdate({ category })
     setShowSuggestions(false)
@@ -145,7 +131,6 @@ export function ProjectInfo({ project, onUpdate }) {
         </p>
       </div>
 
-      {/* Project name */}
       <div className="space-y-2">
         <Label htmlFor="project-name" className="text-gray-300">Название проекта</Label>
         <Input
@@ -157,7 +142,6 @@ export function ProjectInfo({ project, onUpdate }) {
         />
       </div>
 
-      {/* Project description */}
       <div className="space-y-2">
         <Label htmlFor="project-description" className="text-gray-300">Описание</Label>
         <Textarea
@@ -169,7 +153,6 @@ export function ProjectInfo({ project, onUpdate }) {
         />
       </div>
 
-      {/* Category with suggestions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="project-category" className="text-gray-300">
@@ -203,7 +186,6 @@ export function ProjectInfo({ project, onUpdate }) {
             placeholder="Введите категорию или выберите из списка"
           />
           
-          {/* Category suggestions dropdown */}
           {showSuggestions && suggestedCategories.length > 0 && (
             <div 
               ref={suggestionsRef}
@@ -224,7 +206,6 @@ export function ProjectInfo({ project, onUpdate }) {
           )}
         </div>
 
-        {/* Quick category buttons */}
         <div className="flex flex-wrap gap-2 pt-2">
           <span className="text-xs text-gray-500">Быстрый выбор:</span>
           {mockCategories.slice(0, 4).map((category) => (
@@ -247,7 +228,6 @@ export function ProjectInfo({ project, onUpdate }) {
         </div>
       </div>
 
-      {/* Stats summary */}
       <div className="pt-6 border-t border-gray-800">
         <h3 className="text-sm font-semibold text-gray-400 mb-3">СТАТИСТИКА ПРОЕКТА</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

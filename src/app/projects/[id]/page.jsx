@@ -182,14 +182,14 @@ export default function ProjectEditorPage() {
       {/* Main content */}
       <div className="flex">
         {/* Material Sidebar - fixed width, attached to left */}
-        <div className="w-64 flex-shrink-0 h-[calc(100vh-3rem)] sticky top-12">
-          <ProjectSidebar
-            sections={sidebarSections}
-            activeSection={activeSection}
-            onSectionChange={setActiveSection}
-            project={project}
-          />
-        </div>
+        <div className="flex-shrink-0 h-[calc(100vh-3rem)] sticky top-12">
+        <ProjectSidebar
+          sections={sidebarSections}
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          project={project}
+        />
+      </div>
 
         {/* Main content area - takes remaining space, no background container */}
         <div className="flex-1 min-w-0 p-6">
