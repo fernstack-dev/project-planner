@@ -144,105 +144,189 @@ export function KanbanBoard({
     }
   }, [])
 
-  // Monitor for drops (unchanged)
-  useEffect(() => {
-    return monitorForElements({
-      canMonitor: ({ source }) => source.data.type === "card" || source.data.type === "column",
-      onDrop({ source, location }) {
-        const target = location.current.dropTargets[0]
-        if (!target) return
+  // Monitor for drops
+useEffect(() => {
+  return monitorForElements({
+    canMonitor: ({ source }) => source.data.type === "card" || source.data.type === "column",
+    onDrop({ source, location }) {
+      const target = location.current.dropTargets[0];
+      if (!target) return;
 
-        const sourceData = source.data
-        const destData = target.data
+      const sourceData = source.data;
+      const destData = target.data;
 
-        if (sourceData.type === "column" && destData.type === "column") {
-          const homeIndex = columnsRef.current.findIndex(col => col.id === sourceData.id)
-          const destinationIndex = columnsRef.current.findIndex(col => col.id === destData.id)
-          if (homeIndex === -1 || destinationIndex === -1 || homeIndex === destinationIndex) return
+      // Column reordering (already works)
+      if (sourceData.type === "column" && destData.type === "column") {
+        const homeIndex = columnsRef.current.findIndex(col => col.id === sourceData.id);
+        const destinationIndex = columnsRef.current.findIndex(col => col.id === destData.id);
+        if (homeIndex === -1 || destinationIndex === -1 || homeIndex === destinationIndex) return;
 
-          const edge = extractClosestEdge(destData) ?? "right"
-          const reordered = reorderWithEdge({
-            list: columnsRef.current,
-            startIndex: homeIndex,
-            indexOfTarget: destinationIndex,
-            closestEdgeOfTarget: edge,
-            axis: "horizontal",
-          })
-          setColumns(reordered)
-          return
+        const edge = extractClosestEdge(destData) ?? "right";
+        const reordered = reorderWithEdge({
+          list: columnsRef.current,
+          startIndex: homeIndex,
+          indexOfTarget: destinationIndex,
+          closestEdgeOfTarget: edge,
+          axis: "horizontal",
+        });
+        setColumns(reordered);
+        return;
+      }
+
+      // Card handling
+      if (sourceData.type === "card") {
+        const sourceColumn = columnsRef.current.find(col =>
+          col.cards.some(c => c.id === sourceData.id)
+        );
+        if (!sourceColumn) return;
+        const sourceIndex = sourceColumn.cards.findIndex(c => c.id === sourceData.id);
+
+        let newColumns;
+        let destColumn = null;
+        let insertAt = null;
+        let newIndex = null;
+        let edge = null;
+
+        // Case: Dropped onto column container (between cards)
+        if (destData.type === "card-container") {
+          destColumn = columnsRef.current.find(col => col.id === destData.columnId);
+          if (!destColumn) return;
+
+          edge = extractClosestEdge(destData);
+          newIndex = edge === "top" ? 0 : destColumn.cards.length;
+          console.log('extracted edge:', edge);
+          const finalIndex = edge === "top" ? 0 : destColumn.cards.length;
+          console.log('finalIndex:', finalIndex);
+
+          const newSourceCards = [...sourceColumn.cards];
+          const [movedCard] = newSourceCards.splice(sourceIndex, 1);
+          console.log('movedCard id:', movedCard.id);
+
+          const newDestCards = [...destColumn.cards];
+          newDestCards.splice(finalIndex, 0, movedCard);
+          console.log('newDestCards after insert:', newDestCards.map(c => c.id));
+
+          newColumns = columnsRef.current.map(col => {
+            if (col.id === sourceColumn.id) return { ...col, cards: newSourceCards };
+            if (col.id === destColumn.id) return { ...col, cards: newDestCards };
+            return col;
+          });
+          insertAt = finalIndex;
+          console.log('Setting columns with new dest cards count:', newColumns.find(col => col.id === destColumn.id).cards.length);
+
         }
 
-        if (sourceData.type === "card") {
-          const sourceColumn = columnsRef.current.find(col =>
-            col.cards.some(c => c.id === sourceData.id)
-          )
-          if (!sourceColumn) return
-          const sourceIndex = sourceColumn.cards.findIndex(c => c.id === sourceData.id)
+        // Case: Dropped onto another card (reorder or move to different column)
+        else if (destData.type === "card") {
+          destColumn = columnsRef.current.find(col =>
+            col.cards.some(c => c.id === destData.id)
+          );
+          if (!destColumn) return;
 
-          if (destData.type === "card-container") {
-            const destColumn = columnsRef.current.find(col => col.id === destData.columnId)
-            if (!destColumn) return
+          const destIndex = destColumn.cards.findIndex(c => c.id === destData.id);
+          edge = extractClosestEdge(destData);
+          newIndex = edge === "bottom" ? destIndex + 1 : destIndex;
 
-            const edge = extractClosestEdge(destData)
-            const finalIndex = edge === "top" ? 0 : destColumn.cards.length
+          if (sourceColumn.id === destColumn.id) {
+            // Same column reorder
+            console.log('Same column reorder', { sourceIndex, destIndex, edge });
+            const reordered = reorderWithEdge({
+              list: sourceColumn.cards,
+              startIndex: sourceIndex,
+              indexOfTarget: destIndex,
+              closestEdgeOfTarget: edge,
+              axis: "vertical",
+            });
+            console.log('Reordered cards:', reordered.map(c => c.id));
+            newColumns = columnsRef.current.map(col =>
+              col.id === sourceColumn.id ? { ...col, cards: reordered } : col
+            );
+            insertAt = edge === "bottom" ? destIndex + 1 : destIndex;
+            setColumns(newColumns);
+          } else {
+            // Move to different column, insert at card position
+            const newSourceCards = [...sourceColumn.cards];
+            const [movedCard] = newSourceCards.splice(sourceIndex, 1);
+            console.log('movedCard id:', movedCard.id);
 
-            const newSourceCards = [...sourceColumn.cards]
-            const [movedCard] = newSourceCards.splice(sourceIndex, 1)
+            const newDestCards = [...destColumn.cards];
+            insertAt = edge === "bottom" ? destIndex + 1 : destIndex;
+            newDestCards.splice(insertAt, 0, movedCard);
+            console.log('newDestCards after insert:', newDestCards.map(c => c.id));
 
-            const newDestCards = [...destColumn.cards]
-            newDestCards.splice(finalIndex, 0, movedCard)
+            newColumns = columnsRef.current.map(col => {
+              if (col.id === sourceColumn.id) return { ...col, cards: newSourceCards };
+              if (col.id === destColumn.id) return { ...col, cards: newDestCards };
+              return col;
+            });
 
-            const newColumns = columnsRef.current.map(col => {
-              if (col.id === sourceColumn.id) return { ...col, cards: newSourceCards }
-              if (col.id === destColumn.id) return { ...col, cards: newDestCards }
-              return col
-            })
-            setColumns(newColumns)
-            return
-          }
+            console.log('Setting columns with new dest cards count:', newColumns.find(col => col.id === destColumn.id).cards.length);
 
-          if (destData.type === "card") {
-            const destColumn = columnsRef.current.find(col =>
-              col.cards.some(c => c.id === destData.id)
-            )
-            if (!destColumn) return
-
-            const destIndex = destColumn.cards.findIndex(c => c.id === destData.id)
-            const edge = extractClosestEdge(destData)
-
-            if (sourceColumn.id === destColumn.id) {
-              const reordered = reorderWithEdge({
-                list: sourceColumn.cards,
-                startIndex: sourceIndex,
-                indexOfTarget: destIndex,
-                closestEdgeOfTarget: edge,
-                axis: "vertical",
-              })
-              const newColumns = columnsRef.current.map(col =>
-                col.id === sourceColumn.id ? { ...col, cards: reordered } : col
-              )
-              setColumns(newColumns)
-              return
-            }
-
-            const newSourceCards = [...sourceColumn.cards]
-            const [movedCard] = newSourceCards.splice(sourceIndex, 1)
-
-            const newDestCards = [...destColumn.cards]
-            const insertAt = edge === "bottom" ? destIndex + 1 : destIndex
-            newDestCards.splice(insertAt, 0, movedCard)
-
-            const newColumns = columnsRef.current.map(col => {
-              if (col.id === sourceColumn.id) return { ...col, cards: newSourceCards }
-              if (col.id === destColumn.id) return { ...col, cards: newDestCards }
-              return col
-            })
-            setColumns(newColumns)
+            //setColumns(newColumns);
           }
         }
-      },
-    })
-  }, [setColumns])
+
+        if (!destColumn || newIndex === null) return;
+
+        console.log('newIndex:', newIndex, 'sourceIndex:', sourceIndex);
+
+        //if (newIndex <= 0 || newIndex > destColumn.cards.length) return;
+
+        if (sourceColumn.id === destColumn.id && newIndex === sourceIndex) {
+          console.log('No‑op reorder, skipping');
+          return;
+        }
+
+        if (!newColumns) return;
+
+        // Apply local state update
+        setColumns(prevColumns => {
+          // compute newColumns based on prevColumns
+          return newColumns;
+        });
+
+        const movedCard = sourceColumn.cards[sourceIndex];
+        const movedCardId = movedCard.id;
+
+        // Helper to reorder a column (background)
+        const reorderColumn = (columnId, cardIds) => {
+          fetch(`/api/columns/${columnId}/cards/reorder`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderedCardIds: cardIds }),
+          }).catch(console.error);
+        };
+
+        // Update card's columnId and position if moved to another column
+        if (sourceColumn.id !== destColumn.id) {
+          fetch(`/api/cards/${movedCardId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              columnId: destColumn.id,
+              position: insertAt,
+            }),
+          }).catch(console.error);
+        } else {
+          // Same column: only position changed, but we'll let reorder handle it
+          // (no need to update columnId)
+        }
+
+        // Reorder destination column (including the inserted card)
+        const updatedDestColumn = newColumns.find(col => col.id === destColumn.id);
+        const destOrderedCardIds = updatedDestColumn.cards.map(c => c.id);
+        reorderColumn(destColumn.id, destOrderedCardIds);
+
+        // If moved from another column, reorder source column as well (cards shifted)
+        if (sourceColumn.id !== destColumn.id) {
+          const updatedSourceColumn = newColumns.find(col => col.id === sourceColumn.id);
+          const sourceOrderedCardIds = updatedSourceColumn.cards.map(c => c.id);
+          reorderColumn(sourceColumn.id, sourceOrderedCardIds);
+        }
+      }
+    },
+  });
+}, [setColumns]);
 
   const contextValue = {
     columns,
@@ -261,8 +345,8 @@ export function KanbanBoard({
     onToggleChecklistItem,
     onRemoveChecklistItem,
     onToggleCollapse,
-    onUpdateColumnTitle,
-    onUpdateColumnColor,
+    onUpdateTitle: onUpdateColumnTitle,
+    onUpdateColor: onUpdateColumnColor,
     editingColumnId,
     setEditingColumnId,
     editingCardId,
@@ -302,14 +386,18 @@ export function KanbanBoard({
           <div className="flex flex-row gap-3 p-3 h-full items-start">
             <button
               onClick={onAddColumn}
-              className="flex-shrink-0 w-12 h-12 self-start mt-2 rounded-full bg-gray-900/50 border border-dashed border-gray-700 hover:border-emerald-500 hover:bg-emerald-500/10 flex items-center justify-center transition-colors backdrop-blur-sm cursor-pointer"
+              className="flex-shrink-0 w-16 h-16 self-start bg-gray-900/50 border border-dashed border-gray-700 hover:border-emerald-500 hover:bg-emerald-500/10 flex items-center justify-center transition-colors backdrop-blur-sm cursor-pointer"
             >
               <Plus className="h-5 w-5 text-gray-400" />
             </button>
 
-            {columns.map((column) => (
-              <KanbanColumn key={column.id} column={column} />
-            ))}
+            {columns.map((column) => {
+              if (!column?.id) {
+                console.warn('Column missing id:', column);
+                return null;
+              }
+              return <KanbanColumn key={column.id} column={column} />;
+            })}
           </div>
         </div>
       </div>

@@ -245,7 +245,7 @@ export function KanbanCard({ card, columnId }) {
   }
 
   const CardShadow = ({ dragging }) => (
-    <div className="flex-shrink-0 rounded bg-slate-900/50" style={{ height: dragging.height }} />
+    <div className="flex-shrink-0 rounded py-4 bg-slate-800/50" style={{ height: dragging.height }} />
   )
 
   const hasIndicators = () => {
@@ -266,6 +266,7 @@ export function KanbanCard({ card, columnId }) {
     <>
       <div
         ref={outerRef}
+        role="button"
         className={`flex flex-shrink-0 flex-col px-3 py-1 ${outerStyles[state.type] || ""}`}
       >
         {state.type === "is-over" && state.closestEdge === "top" && (
@@ -275,7 +276,7 @@ export function KanbanCard({ card, columnId }) {
         <div
           ref={innerRef}
           onClick={handleCardClick}
-          className={`bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-lg p-3 group hover:border-gray-600 transition-all outline-none ${
+          className={`bg-gray-900 border border-gray-800 p-3 group hover:border-emerald-500/40 transition-all outline-none ${
             innerStyles[state.type] || ""
           }`}
           style={
@@ -289,12 +290,23 @@ export function KanbanCard({ card, columnId }) {
           }
         >
           <div className="flex flex-col gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemoveCard(columnId, card.id)
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="h-4 w-4 text-xs p-0 transition-opacity text-gray-400 hover:text-red-400"
+            >
+              ✕
+            </button>
             {hasIndicators() && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
+
                   {card.priority && card.priority !== "none" && (
                     <div className="flex items-center gap-1 text-xs">
-                      <div className={`w-2 h-2 rounded-full ${getPriorityColor(card.priority)}`} />
+                      <div className={`w-2 h-2 mb-0.5 ${getPriorityColor(card.priority)}`} />
                       <span className="text-gray-400">{getPriorityLabel(card.priority)}</span>
                     </div>
                   )}
@@ -377,17 +389,6 @@ export function KanbanCard({ card, columnId }) {
                     </TooltipProvider>
                   )}
                 </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onRemoveCard(columnId, card.id)
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400"
-                >
-                  ✕
-                </button>
               </div>
             )}
 
@@ -401,16 +402,16 @@ export function KanbanCard({ card, columnId }) {
                   onBlur={handleSave}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-gray-900/50 border border-gray-700 text-sm rounded px-2 py-1 w-full"
+                  className="bg-gray-900 border border-gray-800 text-sm rounded px-2 py-1 w-full"
                 />
               ) : (
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    setEditingCardId(card.id)
+                    e.stopPropagation();
+                    setEditingCardId(card.id);
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
-                  className="text-sm text-left hover:bg-gray-800/50 px-2 py-1 rounded transition-colors w-full"
+                  className="text-sm text-left hover:bg-gray-800 px-2 py-1 rounded transition-colors w-full"
                 >
                   {card.content}
                 </button>
@@ -425,43 +426,43 @@ export function KanbanCard({ card, columnId }) {
       </div>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="bg-gray-900 border-gray-800 text-white max-w-2xl p-6">
+        <DialogContent className="bg-gray-900 border border-gray-800 text-white max-w-2xl p-6 rounded-none">
           <DialogHeader className="mb-4">
-            <DialogTitle>Детали задачи</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Детали задачи</DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title">Название</Label>
+              <Label htmlFor="title" className="text-gray-300 text-sm">Название</Label>
               <Input
                 id="title"
                 value={card.content}
                 onChange={(e) => onUpdateCardContent(columnId, card.id, e.target.value)}
-                className="bg-gray-800 border-gray-700"
+                className="bg-gray-800 border-gray-700 rounded-none"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Заметки</Label>
+              <Label htmlFor="notes" className="text-gray-300 text-sm">Заметки</Label>
               <Textarea
                 id="notes"
                 value={card.description || ""}
                 onChange={(e) => onUpdateCardDescription(columnId, card.id, e.target.value)}
-                className="bg-gray-800 border-gray-700 min-h-[100px]"
+                className="bg-gray-800 border-gray-700 rounded-none min-h-[100px]"
                 placeholder="Добавить заметки..."
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Приоритет</Label>
+                <Label className="text-gray-300 text-sm">Приоритет</Label>
                 <Select
                   value={card.priority || "none"}
                   onValueChange={(value) => onUpdateCardPriority(columnId, card.id, value)}
                 >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
+                  <SelectTrigger className="bg-gray-800 border-gray-700 rounded-none">
                     <SelectValue placeholder="Выберите приоритет" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-gray-800 border-gray-700 rounded-none">
                     {priorityOptions.map(opt => (
                       <SelectItem key={opt.value} value={opt.value}>
                         <div className="flex items-center gap-2">
@@ -476,13 +477,13 @@ export function KanbanCard({ card, columnId }) {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Срок</Label>
+                <Label className="text-gray-300 text-sm">Срок</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal bg-gray-800 border-gray-700",
+                        "w-full justify-start text-left font-normal bg-gray-800 border-gray-700 rounded-none",
                         !card.dueDate && "text-gray-400"
                       )}
                     >
@@ -492,7 +493,7 @@ export function KanbanCard({ card, columnId }) {
                       </span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
+                  <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700 rounded-none">
                     <Calendar
                       mode="single"
                       selected={card.dueDate ? new Date(card.dueDate) : undefined}
@@ -505,13 +506,13 @@ export function KanbanCard({ card, columnId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Метки</Label>
+              <Label className="text-gray-300 text-sm">Метки</Label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {card.labels?.map(label => (
                   <Badge
                     key={label.id}
                     style={{ backgroundColor: label.color }}
-                    className="text-white px-2 py-1 text-xs"
+                    className="text-white px-2 py-1 text-xs rounded-none"
                   >
                     {label.text}
                     <button
@@ -525,16 +526,16 @@ export function KanbanCard({ card, columnId }) {
               </div>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-300">
+                  <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-300 rounded-none">
                     <Plus className="h-4 w-4 mr-2" />
                     Добавить метку
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="bg-gray-800 border-gray-700 p-3 w-64">
+                <PopoverContent className="bg-gray-800 border-gray-700 p-3 w-64 rounded-none">
                   <div className="space-y-3">
                     <Input
                       placeholder="Текст метки"
-                      className="bg-gray-900 border-gray-700"
+                      className="bg-gray-900 border-gray-700 rounded-none"
                       id="new-label-text"
                     />
                     <div className="flex flex-wrap gap-2">
@@ -559,20 +560,20 @@ export function KanbanCard({ card, columnId }) {
             </div>
 
             <div className="space-y-2">
-              <Label>Исполнитель</Label>
+              <Label className="text-gray-300 text-sm">Исполнитель</Label>
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-gray-400" />
                 <Input
                   value={card.assignee || ""}
                   onChange={(e) => onUpdateCardAssignee(columnId, card.id, e.target.value)}
                   placeholder="Не назначен"
-                  className="bg-gray-800 border-gray-700 flex-1"
+                  className="bg-gray-800 border-gray-700 rounded-none flex-1"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Чек-лист</Label>
+              <Label className="text-gray-300 text-sm">Чек-лист</Label>
               <Checklist
                 items={card.checklist || []}
                 onAdd={(item) => onAddCardChecklistItem(columnId, card.id, item)}
