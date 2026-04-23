@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/db/db";
 import { projects } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -12,14 +12,21 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get distinct, non-null categories from user's projects
+    const userId = session.user.id;
+    console.log("Fetching categories for user:", userId);
+
     const result = await db
       .select({ category: projects.category })
       .from(projects)
-      .where(eq(projects.ownerId, session.user.id))
-      .where(sql`${projects.category} IS NOT NULL`);
+      .where(
+        and(
+          eq(projects.ownerId, userId),
+          sql`${projects.category} IS NOT NULL`
+        )
+      )
+      .groupBy(projects.category); // добавил GROUP BY для чистоты
 
-    const categories = [...new Set(result.map(r => r.category))];
+    const categories = result.map(r => r.category).filter(Boolean);
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Error fetching categories:', error);
