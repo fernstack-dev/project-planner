@@ -18,11 +18,6 @@ export default function AuthPage() {
     }
   }, [searchParams]);
 
-  const handleSwitchToRegister = () => {
-    setActiveTab("register");
-    window.history.replaceState(null, "", "/login?tab=register");
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-950">
       <div className="w-full max-w-md">
@@ -40,7 +35,7 @@ export default function AuthPage() {
           </Button>
         </div>
 
-        <AuthCard onSwitchToRegister={handleSwitchToRegister} />
+        <AuthCard activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </div>
   );

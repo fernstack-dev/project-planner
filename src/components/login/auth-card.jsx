@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogIn, UserPlus } from "lucide-react";
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
 
-export function AuthCard({ onSwitchToRegister }) {
-  const [activeTab, setActiveTab] = useState("login");
-
+export function AuthCard({ activeTab, onTabChange }) {
   const handleTabChange = (value) => {
-    setActiveTab(value);
-    if (value === "register" && onSwitchToRegister) onSwitchToRegister();
+    onTabChange(value);
+    if (value === "register") {
+      window.history.replaceState(null, "", "/login?tab=register");
+    } else {
+      window.history.replaceState(null, "", "/login");
+    }
   };
 
   return (

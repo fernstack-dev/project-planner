@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, UserPlus, Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -20,8 +21,18 @@ export function RegisterForm() {
     name: "",
   });
 
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isValidEmail(formData.email)) {
+      setError("Введите корректный email (например, name@mail.ru)");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Пароли не совпадают");
@@ -46,7 +57,17 @@ export function RegisterForm() {
         setError(data.error || "Ошибка регистрации");
         return;
       }
-      router.push("/login?tab=login");
+      const signInResult = await signIn("credentials", {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (signInResult?.error) {
+        router.push("/login?tab=login");
+      } else {
+        router.push("/projects");
+      }
     } catch (err) {
       setError("Ошибка сети");
     } finally {

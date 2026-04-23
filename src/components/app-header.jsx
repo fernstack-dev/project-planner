@@ -72,7 +72,7 @@ export function AppHeader() {
     return () => window.removeEventListener("resize", handleResize);
   }, [pathname]);
 
-  const handleLogout = () => signOut({ callbackUrl: "/" });
+  const handleLogout = () => signOut({ callbackUrl: "https://projify.ru/login" });
 
   return (
     <TooltipProvider delayDuration={300}>
